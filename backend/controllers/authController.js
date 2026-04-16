@@ -5,6 +5,19 @@ const { notifyNewUser } = require('../bot/notifications');
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
 
+const serializeUser = (user) => ({
+  id: user._id,
+  fullName: user.fullName,
+  username: user.username,
+  role: user.role,
+  avatar: user.avatar || '',
+  favorites: user.favorites || [],
+  phone: user.phone,
+  countryCode: user.countryCode,
+  age: user.age,
+  email: user.email || ''
+});
+
 // POST /api/auth/register
 exports.register = async (req, res) => {
   try {
@@ -24,7 +37,7 @@ exports.register = async (req, res) => {
     res.status(201).json({
       success: true,
       token,
-      user: { id: user._id, fullName: user.fullName, username: user.username, role: user.role }
+      user: serializeUser(user)
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -53,7 +66,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: { id: user._id, fullName: user.fullName, username: user.username, role: user.role, avatar: user.avatar }
+      user: serializeUser(user)
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -69,7 +82,8 @@ exports.logout = (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password').populate('favorites');
-    res.json({ success: true, user });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, user: serializeUser(user) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

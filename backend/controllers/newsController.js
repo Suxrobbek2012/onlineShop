@@ -4,11 +4,21 @@ const News = require('../models/News');
 exports.getNews = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
+    const isAdmin = req.user?.role === 'admin';
+    const filter = isAdmin && req.query.includeAll === 'true'
+      ? {}
+      : { isPublished: true };
     const skip = (Number(page) - 1) * Number(limit);
+
     const [articles, total] = await Promise.all([
-      News.find({ isPublished: true }).populate('author', 'fullName').sort('-createdAt').skip(skip).limit(Number(limit)),
-      News.countDocuments({ isPublished: true })
+      News.find(filter)
+        .populate('author', 'fullName')
+        .sort('-createdAt')
+        .skip(skip)
+        .limit(Number(limit)),
+      News.countDocuments(filter)
     ]);
+
     res.json({ success: true, total, articles });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -20,6 +30,9 @@ exports.getNewsById = async (req, res) => {
   try {
     const article = await News.findById(req.params.id).populate('author', 'fullName');
     if (!article) return res.status(404).json({ success: false, message: 'Article not found' });
+    if (!article.isPublished && req.user?.role !== 'admin') {
+      return res.status(404).json({ success: false, message: 'Article not found' });
+    }
     res.json({ success: true, article });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -43,7 +56,7 @@ exports.updateNews = async (req, res) => {
   try {
     const data = { ...req.body };
     if (req.file) data.image = `/uploads/${req.file.filename}`;
-    const article = await News.findByIdAndUpdate(req.params.id, data, { new: true });
+    const article = await News.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
     if (!article) return res.status(404).json({ success: false, message: 'Article not found' });
     res.json({ success: true, article });
   } catch (err) {
@@ -54,7 +67,8 @@ exports.updateNews = async (req, res) => {
 // DELETE /api/news/:id  (admin)
 exports.deleteNews = async (req, res) => {
   try {
-    await News.findByIdAndDelete(req.params.id);
+    const deleted = await News.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Article not found' });
     res.json({ success: true, message: 'Article deleted' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

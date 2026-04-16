@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SHOP — Bosh sahifa</title>
+  <title>SHOP_suhrob</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -123,7 +124,7 @@
         }).join('');
 
         var user = Auth.getUser();
-        var favs = user ? (user.favorites || []).map(function(f) { return f._id || f; }) : [];
+        var favs = getUserFavoriteIds(user);
 
         var featData = await api.get('/products?featured=true&limit=8');
         document.getElementById('featured-grid').innerHTML = featData.products.length

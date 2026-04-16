@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHOP — Profile</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="css/main.css">
   <style>
     .profile-layout{display:grid;grid-template-columns:260px 1fr;gap:2rem;padding:2rem 0;align-items:start}
@@ -158,9 +159,8 @@
       document.getElementById('sidebar-name').textContent = u.fullName;
       document.getElementById('sidebar-username').textContent = '@' + u.username;
       var avatarEl = document.getElementById('avatar-display');
-      var imgBase = window.IMG_SERVER || 'http://localhost:5000';
       if (u.avatar) {
-        avatarEl.innerHTML = '<img class="avatar-img" src="' + (u.avatar.startsWith('http') ? u.avatar : imgBase + u.avatar) + '" alt="avatar">';
+        avatarEl.innerHTML = '<img class="avatar-img" src="' + escapeHtml(getImageUrl(u.avatar)) + '" alt="avatar">';
       } else {
         avatarEl.innerHTML = '<div class="avatar-placeholder">' + u.fullName.charAt(0).toUpperCase() + '</div>';
       }
@@ -203,7 +203,7 @@
         var favs = data.user.favorites || [];
         var el = document.getElementById('favorites-grid');
         if (!favs.length) { el.innerHTML = '<p class="text-muted text-center mt-3">No favorites yet</p>'; return; }
-        el.innerHTML = favs.map(function(p) { return renderProductCard(p, favs.map(function(f) { return f._id; })); }).join('');
+        el.innerHTML = favs.map(function(p) { return renderProductCard(p, getUserFavoriteIds(data.user)); }).join('');
       } catch(e) {}
     }
 
@@ -258,6 +258,7 @@
       try {
         var data = await api.putForm('/users/' + userData._id, fd);
         userData = data.user;
+        Auth.setSession(Auth.getToken(), data.user);
         renderProfile();
         Toast.success('Avatar updated!');
       } catch(e) { Toast.error(e.message); }
@@ -277,7 +278,9 @@
       try {
         var fd = new FormData();
         fd.append('newPassword', np);
-        await api.putForm('/users/' + userData._id, fd);
+        var data = await api.putForm('/users/' + userData._id, fd);
+        userData = data.user;
+        Auth.setSession(Auth.getToken(), data.user);
         Toast.success('Parol yangilandi!');
         this.reset();
       } catch(e) { Toast.error(e.message); }

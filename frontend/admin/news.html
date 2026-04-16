@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHOP Admin — News</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="stylesheet" href="../css/main.css">
   <link rel="stylesheet" href="./css/admin.css">
   <style>
@@ -82,7 +83,7 @@
 
   async function loadNews() {
     try {
-      var data = await api.get('/news?limit=50');
+      var data = await api.get('/news?includeAll=true&limit=50');
       var tbody = document.getElementById('news-tbody');
       if (!data.articles.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)">Yangilik yo\'q</td></tr>'; return; }
       tbody.innerHTML = data.articles.map(function(a) {

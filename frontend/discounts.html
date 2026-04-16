@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHOP — Discounts</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="css/main.css">
   <style>
     .sale-banner{background:linear-gradient(135deg,#f43f5e,#fb923c);color:#fff;padding:3rem 0 2.5rem;text-align:center;margin-bottom:2rem;position:relative;overflow:hidden}
@@ -80,7 +81,7 @@
       try {
         var data = await api.get('/products?sale=true&page=' + page + '&limit=16&sort=price_asc');
         var user = Auth.getUser();
-        var favs = user ? (user.favorites || []) : [];
+        var favs = getUserFavoriteIds(user);
         var grid = document.getElementById('sale-products');
         if (!data.products.length) { grid.innerHTML = '<p class="text-muted text-center" style="grid-column:1/-1">No sale products right now</p>'; return; }
         grid.innerHTML = data.products.map(function(p) { return renderProductCard(p, favs); }).join('');

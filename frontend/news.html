@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SHOP — News</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="css/main.css">
   <style>
     .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
@@ -58,12 +59,12 @@
         var grid = document.getElementById('news-grid');
         if (!data.articles.length) { grid.innerHTML = '<p class="text-muted text-center" style="grid-column:1/-1">No news yet</p>'; return; }
         grid.innerHTML = data.articles.map(function(a) {
-          var imgSrc = a.image ? (a.image.startsWith('http') ? a.image : (window.IMG_SERVER||'http://localhost:5000') + a.image) : null;
+          var imgSrc = a.image ? getImageUrl(a.image) : null;
           return '<div class="card news-card" data-id="' + a._id + '">' +
             (imgSrc ? '<img class="news-img" src="' + imgSrc + '" alt="' + a.title + '">' : '<div class="news-img-ph">📰</div>') +
             '<div class="news-body">' +
             '<div class="news-date">' + new Date(a.createdAt).toLocaleDateString() + (a.author ? ' · ' + a.author.fullName : '') + '</div>' +
-            '<div class="news-title">' + a.title + '</div>' +
+            '<div class="news-title">' + escapeHtml(a.title) + '</div>' +
             '<div class="news-excerpt">' + (a.excerpt || a.content.substring(0, 120) + '...') + '</div>' +
             '<button class="btn btn-secondary btn-sm mt-2 read-more" data-id="' + a._id + '" data-i18n="news.read_more">Ko\'proq o\'qish</button>' +
             '</div></div>';
@@ -94,12 +95,12 @@
       try {
         var data = await api.get('/news/' + id);
         var a = data.article;
-        var imgSrc = a.image ? (a.image.startsWith('http') ? a.image : (window.IMG_SERVER||'http://localhost:5000') + a.image) : null;
+        var imgSrc = a.image ? getImageUrl(a.image) : null;
         document.getElementById('article-content').innerHTML =
           (imgSrc ? '<img class="article-img" src="' + imgSrc + '" alt="' + a.title + '">' : '') +
-          '<h1 style="font-size:1.8rem;font-weight:800;margin-bottom:.5rem">' + a.title + '</h1>' +
+          '<h1 style="font-size:1.8rem;font-weight:800;margin-bottom:.5rem">' + escapeHtml(a.title) + '</h1>' +
           '<div style="color:var(--text-muted);margin-bottom:1.5rem">' + new Date(a.createdAt).toLocaleDateString() + (a.author ? ' · ' + a.author.fullName : '') + '</div>' +
-          '<div class="article-content">' + a.content.replace(/\n/g, '<br>') + '</div>';
+          '<div class="article-content">' + nl2brSafe(a.content) + '</div>';
         document.getElementById('list-view').style.display = 'none';
         document.getElementById('article-view').style.display = 'block';
         window.scrollTo(0, 0);

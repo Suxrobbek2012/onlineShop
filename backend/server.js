@@ -13,14 +13,18 @@ const app = express();
 connectDB();
 
 // Security headers
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false,
+}));
 
 // CORS
 app.use(cors({ origin: true, credentials: true }));
 
 // Rate limiting
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
@@ -29,7 +33,7 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // max 20 login attempts per 15 min
+  max: 20,
   message: { success: false, message: 'Too many login attempts, please try again in 15 minutes.' }
 });
 
@@ -45,13 +49,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-app.use('/api/auth',     require('./routes/auth'));
-app.use('/api/users',    require('./routes/users'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/products', require('./routes/products'));
-app.use('/api/orders',   require('./routes/orders'));
-app.use('/api/cart',     require('./routes/cart'));
-app.use('/api/news',     require('./routes/news'));
-app.use('/api/admin',    require('./routes/admin'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/cart', require('./routes/cart'));
+app.use('/api/news', require('./routes/news'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Coupon validate (public)
 app.post('/api/coupons/validate', require('./controllers/adminController').validateCoupon);
@@ -69,9 +73,11 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-// Init Telegram bot
-initBot();
+  // Init Telegram bot only for the standalone server process.
+  initBot();
+}
 
 module.exports = app;

@@ -1,5 +1,29 @@
 const Product = require('../models/Product');
 
+const coerceBoolean = (value) => value === true || value === 'true' || value === 'on';
+
+const buildProductPayload = (body) => {
+  const data = { ...body };
+
+  ['price', 'discount', 'stock', 'rating', 'reviewCount'].forEach((field) => {
+    if (data[field] !== undefined && data[field] !== '') data[field] = Number(data[field]);
+  });
+
+  ['isFeatured', 'isOnSale'].forEach((field) => {
+    if (data[field] !== undefined) data[field] = coerceBoolean(data[field]);
+  });
+
+  if (typeof data.tags === 'string') {
+    data.tags = data.tags.split(',').map((tag) => tag.trim()).filter(Boolean);
+  }
+
+  Object.keys(data).forEach((key) => {
+    if (data[key] === '' || data[key] === undefined) delete data[key];
+  });
+
+  return data;
+};
+
 // GET /api/products
 exports.getProducts = async (req, res) => {
   try {
@@ -31,13 +55,21 @@ exports.getProducts = async (req, res) => {
     };
     const sortBy = sortMap[sort] || '-createdAt';
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const numericPage = Number(page);
+    const numericLimit = Number(limit);
+    const skip = (numericPage - 1) * numericLimit;
     const [products, total] = await Promise.all([
-      Product.find(filter).sort(sortBy).skip(skip).limit(Number(limit)),
+      Product.find(filter).sort(sortBy).skip(skip).limit(numericLimit),
       Product.countDocuments(filter)
     ]);
 
-    res.json({ success: true, total, page: Number(page), pages: Math.ceil(total / limit), products });
+    res.json({
+      success: true,
+      total,
+      page: numericPage,
+      pages: Math.ceil(total / numericLimit),
+      products
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -57,7 +89,7 @@ exports.getProduct = async (req, res) => {
 // POST /api/products  (admin)
 exports.createProduct = async (req, res) => {
   try {
-    const data = { ...req.body };
+    const data = buildProductPayload(req.body);
     if (req.file) data.image = `/uploads/${req.file.filename}`;
     else if (req.body.imageUrl) data.image = req.body.imageUrl;
     const product = await Product.create(data);
@@ -70,7 +102,7 @@ exports.createProduct = async (req, res) => {
 // PUT /api/products/:id  (admin)
 exports.updateProduct = async (req, res) => {
   try {
-    const data = { ...req.body };
+    const data = buildProductPayload(req.body);
     if (req.file) data.image = `/uploads/${req.file.filename}`;
     else if (req.body.imageUrl) data.image = req.body.imageUrl;
     const product = await Product.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });

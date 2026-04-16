@@ -45,9 +45,13 @@ var I18N = {
       if (text) el.title = text;
     });
     // Update active lang button
-    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    document.querySelectorAll('.lang-option').forEach(function(btn) {
       btn.classList.toggle('active', btn.dataset.lang === I18N.current);
     });
+    // Update dropdown label
+    var labels = { uz:'UZ', ru:'RU', en:'EN' };
+    var icon = document.getElementById('lang-current-icon');
+    if (icon) icon.textContent = labels[I18N.current] || I18N.current.toUpperCase();
     // Update html lang attribute
     document.documentElement.lang = I18N.current;
   },
